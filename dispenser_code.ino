@@ -26,75 +26,157 @@ byte readCard[4];    // Stores scanned ID read from RFID Module
 // Servo variables
 Servo servoNFC;
 Servo servoDispenser;
+Servo servoLDR;
 
-int posNFC;
-int posDispenser;
+int posNFC = 0;
+int posDispenser = 0;
+int posLDR = 0;
 
 // Button variables
-int buttonPin = 2;
-int buttonState = 0;
-int lastButtonState = 0;
+int buttonPinDanish = 2;
+int buttonPinEnglish = 3;
+int buttonStateDanish = 0;
+int buttonStateEnglish = 0;
+int lastButtonStateDanish = 0;
+int lastButtonStateEnglish = 0;
 
+// LDR variables
+int pinLDR = A0;
+int valLDR;
+int minLDR = 150;
 
 // System variables
 boolean hasReadNFC = false;
 boolean hasPressedButton = false;
+boolean hasTriedToDispensePill = false;
+boolean hasDispensedPill = false;
+
+
+unsigned long triedToDispenseMillis = 0;
 
 
 void setup() {
   Serial.begin(9600);
   while (!Serial);
-  
+
   SPI.begin();
   mfrc522.PCD_Init(); // Init MFRC522 (RFID reader)
 
   // Attach servos
-  servoNFC.attach(3);
-  servoDispenser.attach(5);
+  servoNFC.attach(5);
+  servoDispenser.attach(6);
+  servoLDR.attach(7);
 
-  servoNFC.write(0);  
+  servoNFC.write(posNFC);
+  servoDispenser.write(posDispenser);
+  servoLDR.write(posLDR);
 
-  pinMode(buttonPin, INPUT);
+  pinMode(buttonPinDanish, INPUT);
+  pinMode(buttonPinEnglish, INPUT);
 
   // Ready to start
   Serial.println("Ready");
+
 }
 
 void loop() {
 
-  buttonState = digitalRead(buttonPin);
-  Serial.println(buttonState);
-  
-  if(!hasReadNFC) {
-    do {
-      readId = getID();
-      if (readId.length() > 0) { // An NFC chip has been presented
-        hasReadNFC = true;
-        delay(1000);
-        openServo(posNFC, servoNFC); // Close NFC coin slot
-        delay(1000);
-      }
-    } while (readId.length() > 0);
+  // PHASE 1 : Check for a token
+  if (!hasReadNFC) {
+    checkForNFC();
   }
 
-  // If an NFC coin has been read, we can start listening for a button press from the user
-  if(hasReadNFC && !hasPressedButton) {
-    if (buttonState != lastButtonState) {
-      if (buttonState == HIGH) { // User has pressed button
-        hasPressedButton = true;
-        openServo(posDispenser, servoDispenser); // Dispense pills
+  // PHASE 2 : Check for buttonpress (English or Danish)
+  if (hasReadNFC && !hasPressedButton) {
+    checkForButtonPress();
+  }
 
-        delay(1000);
+  // PHASE 3 : Try to dispense pill(s)
+  if (hasReadNFC && hasPressedButton) {
+    tryToDispensePill();
+    printDiagnosis();
+  }
 
-        // Pills have now been dispensed and we reset the system
-        closeServos();
-        hasReadNFC = false;
-        hasPressedButton = false;
-      }
-      delay(50);
+  // PHASE 4 : Check if pill(s) were acually dispensed
+  unsigned long currentMillis = millis();
+  if (hasTriedToDispensePill) {
+    valLDR = analogRead(pinLDR);
+    if (valLDR < minLDR) { // Pills are blocking the LDR = pills were dispensed
+      dispenseFromPillChecker();
+      
+    } else if (currentMillis - triedToDispenseMillis >= 2000) { // Allow 2 seconds for pills to be dispensed
+      // Pills were not dispensed
+      tryToDispensePill();
     }
-    lastButtonState = buttonState;
   }
+}
+
+// CHECKS FOR A PRESENTED NFC TAG (TOKEN)
+void checkForNFC() {
+  do {
+    readId = getID();
+    if (readId.length() > 0) { // An NFC chip has been presented
+      hasReadNFC = true;
+      delay(1000);
+      openServo(posNFC, servoNFC); // Close NFC coin slot
+    }
+  } while (readId.length() > 0);
+}
+
+// CHECKS IF A BUTTON HAS BEEN PRESSED
+void checkForButtonPress() {
+  if ( (buttonStateDanish != lastButtonStateDanish) || (buttonStateEnglish != lastButtonStateEnglish) ) {
+    if ( buttonStateDanish == HIGH || buttonStateEnglish == HIGH) {
+      hasPressedButton = true;
+    }
+    delay(50);
+  }
+}
+
+// DISPENSES A PILL
+void tryToDispensePill() {
+  // VICTORS CODE TO DISPENSE THE PILL(S) HERE (both opens and closes the servo)
+  hasTriedToDispensePill = true;
+  triedToDispenseMillis = millis();
+}
+
+// PRINT DIAGOSIS
+void printDiagnosis() {
+  // CODE TO PRINT THE DIAGNOSIS HERE
+}
+
+// SEND PILLS TO THE USER AND FINISH UP
+void dispenseFromPillChecker() {
+  hasDispensedPill = true;
+  openServo(posLDR, servoLDR);
+  resetSystem();
+}
+
+// RESET THE SYSTEM
+void resetSystem() {
+  hasReadNFC = false;
+  hasPressedButton = false;
+  hasTriedToDispensePill = false;
+  hasDispensedPill = false;
+  closeServo(posLDR, servoLDR);
+  closeServo(posNFC, servoNFC);
+
+}
+
+void openServo(int servoPos, Servo servo) {
+  for (servoPos = 0; servoPos <= 180; servoPos += 1) {
+    servo.write(servoPos);
+    delay(15);
+  }
+  return;
+}
+
+void closeServo(int servoPos, Servo servo) {
+  for (int pos = 180; pos >= 0; pos -= 1) {
+    servo.write(servoPos);
+    delay(15);
+  }
+  return;
 }
 
 
@@ -120,23 +202,3 @@ String getID() {
   mfrc522.PICC_HaltA(); // Stop reading
   return id;
 }
-
-void openServo(int servoPos, Servo servo) {
-  for (servoPos = 0; servoPos <= 180; servoPos += 1) {
-    servo.write(servoPos);  
-    delay(15);
-  }
-  return;
-}
-
-void closeServos() {
-  for (int pos = 180; pos >= 0; pos -= 1) { 
-    servoNFC.write(pos);   
-    servoDispenser.write(pos);   
-    delay(15);
-  }
-  return;
-}
-
-
-
