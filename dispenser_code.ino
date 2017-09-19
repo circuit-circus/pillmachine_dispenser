@@ -30,7 +30,6 @@ Servo servoDispenser;
 int posNFC;
 int posDispenser;
 
-
 // Button variables
 int buttonPin = 2;
 int buttonState = 0;
@@ -53,6 +52,8 @@ void setup() {
   servoNFC.attach(3);
   servoDispenser.attach(5);
 
+  servoNFC.write(0);  
+
   pinMode(buttonPin, INPUT);
 
   // Ready to start
@@ -60,11 +61,16 @@ void setup() {
 }
 
 void loop() {
+
+  buttonState = digitalRead(buttonPin);
+  Serial.println(buttonState);
+  
   if(!hasReadNFC) {
     do {
       readId = getID();
       if (readId.length() > 0) { // An NFC chip has been presented
         hasReadNFC = true;
+        delay(1000);
         openServo(posNFC, servoNFC); // Close NFC coin slot
         delay(1000);
       }
@@ -73,8 +79,6 @@ void loop() {
 
   // If an NFC coin has been read, we can start listening for a button press from the user
   if(hasReadNFC && !hasPressedButton) {
-    buttonState = digitalRead(buttonPin);
-  
     if (buttonState != lastButtonState) {
       if (buttonState == HIGH) { // User has pressed button
         hasPressedButton = true;
