@@ -43,7 +43,7 @@ int lastButtonStateEnglish = 0;
 // LDR variables
 int pinLDR = A0;
 int valLDR;
-int minLDR = 150;
+int thresholdLDR = 150;
 
 // System variables
 boolean hasReadNFC = false;
@@ -101,7 +101,7 @@ void loop() {
   unsigned long currentMillis = millis();
   if (hasTriedToDispensePill) {
     valLDR = analogRead(pinLDR);
-    if (valLDR < minLDR) { // Pills are blocking the LDR = pills were dispensed
+    if (valLDR < thresholdLDR) { // Pills are blocking the LDR = pills were dispensed
       dispenseFromPillChecker();
       
     } else if (currentMillis - triedToDispenseMillis >= 2000) { // Allow 2 seconds for pills to be dispensed
