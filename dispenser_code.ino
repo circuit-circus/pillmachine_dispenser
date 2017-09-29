@@ -8,8 +8,15 @@
 // Includes
 #include <SPI.h>
 #include <MFRC522.h>
-
+#include <Ethernet.h>
 #include <Servo.h>
+
+// Ethernet variables
+static uint8_t mac[] = {  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
+static uint8_t myip[] = {  10, 0, 0, 100 };
+IPAddress pc_server(10,0,0,31);  // serverens adress
+
+EthernetClient client;
 
 
 // RFID variables
@@ -45,13 +52,16 @@ boolean hasPressedButton = false;
 boolean hasDispensedPill = false;
 
 
-
 void setup() {
   Serial.begin(9600);
   while (!Serial);
 
   SPI.begin();
   mfrc522.PCD_Init(); // Init MFRC522 (RFID reader)
+
+  Ethernet.begin(mac, myip);
+  delay(5000); // wait for ethernetcard
+  aktivateEthernetSPI(false);
 
   // Attach servos
   servoNFC.attach(5);
@@ -120,6 +130,7 @@ void dispensePill() {
 // PRINT DIAGOSIS
 void printDiagnosis() {
   // CODE TO PRINT THE DIAGNOSIS HERE
+  
 }
 
 // RESET THE SYSTEM
@@ -128,7 +139,15 @@ void resetSystem() {
   hasPressedButton = false;
   hasDispensedPill = false;
   closeServo(posNFC, servoNFC);
+}
 
+void aktivateEthernetSPI(boolean x) {
+  // mfrc522.PICC_HaltA();
+  // skift SPI/Slave... turn RFID shield off, ethernet on (LOW=on)
+  // http://tronixstuff.com/2011/05/13/tutorial-arduino-and-the-spi-bus/
+
+  digitalWrite(SS_PIN,x);
+  digitalWrite(10,!x);
 }
 
 void openServo(int servoPos, Servo servo) {
