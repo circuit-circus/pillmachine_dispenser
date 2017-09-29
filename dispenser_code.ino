@@ -30,7 +30,6 @@ Servo servoLDR;
 
 int posNFC = 0;
 int posDispenser = 0;
-int posLDR = 0;
 
 // Button variables
 int buttonPinDanish = 2;
@@ -40,19 +39,11 @@ int buttonStateEnglish = 0;
 int lastButtonStateDanish = 0;
 int lastButtonStateEnglish = 0;
 
-// LDR variables
-int pinLDR = A0;
-int valLDR;
-int thresholdLDR = 150;
-
 // System variables
 boolean hasReadNFC = false;
 boolean hasPressedButton = false;
-boolean hasTriedToDispensePill = false;
 boolean hasDispensedPill = false;
 
-
-unsigned long triedToDispenseMillis = 0;
 
 
 void setup() {
@@ -65,11 +56,9 @@ void setup() {
   // Attach servos
   servoNFC.attach(5);
   servoDispenser.attach(6);
-  servoLDR.attach(7);
 
   servoNFC.write(posNFC);
   servoDispenser.write(posDispenser);
-  servoLDR.write(posLDR);
 
   pinMode(buttonPinDanish, INPUT);
   pinMode(buttonPinEnglish, INPUT);
@@ -93,22 +82,10 @@ void loop() {
 
   // PHASE 3 : Try to dispense pill(s)
   if (hasReadNFC && hasPressedButton) {
-    tryToDispensePill();
+    dispensePill();
     printDiagnosis();
   }
 
-  // PHASE 4 : Check if pill(s) were acually dispensed
-  unsigned long currentMillis = millis();
-  if (hasTriedToDispensePill) {
-    valLDR = analogRead(pinLDR);
-    if (valLDR < thresholdLDR) { // Pills are blocking the LDR = pills were dispensed
-      dispenseFromPillChecker();
-      
-    } else if (currentMillis - triedToDispenseMillis >= 2000) { // Allow 2 seconds for pills to be dispensed
-      // Pills were not dispensed
-      tryToDispensePill();
-    }
-  }
 }
 
 // CHECKS FOR A PRESENTED NFC TAG (TOKEN)
@@ -134,10 +111,10 @@ void checkForButtonPress() {
 }
 
 // DISPENSES A PILL
-void tryToDispensePill() {
+void dispensePill() {
   // VICTORS CODE TO DISPENSE THE PILL(S) HERE (both opens and closes the servo)
-  hasTriedToDispensePill = true;
-  triedToDispenseMillis = millis();
+  hasDispensedPill = true;
+  resetSystem();
 }
 
 // PRINT DIAGOSIS
@@ -145,20 +122,11 @@ void printDiagnosis() {
   // CODE TO PRINT THE DIAGNOSIS HERE
 }
 
-// SEND PILLS TO THE USER AND FINISH UP
-void dispenseFromPillChecker() {
-  hasDispensedPill = true;
-  openServo(posLDR, servoLDR);
-  resetSystem();
-}
-
 // RESET THE SYSTEM
 void resetSystem() {
   hasReadNFC = false;
   hasPressedButton = false;
-  hasTriedToDispensePill = false;
   hasDispensedPill = false;
-  closeServo(posLDR, servoLDR);
   closeServo(posNFC, servoNFC);
 
 }
