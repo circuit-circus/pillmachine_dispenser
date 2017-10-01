@@ -13,7 +13,7 @@
 
 // Ethernet variables
 static uint8_t mac[] = {  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
-static uint8_t myip[] = {  10, 0, 0, 100 };
+static uint8_t myip[] = {  10, 0, 0, 200 };
 IPAddress pc_server(10,0,0,31);  // serverens adress
 
 EthernetClient client;
@@ -21,14 +21,15 @@ EthernetClient client;
 
 // RFID variables
 #define RST_PIN 9
-#define SS_PIN 10
+#define SS_PIN 8
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
 
-String readId = "";
-String lastReadId = "";
-
-byte readCard[4];    // Stores scanned ID read from RFID Module
+boolean cardPresent = false; // DEBUG: Set this and isDebugging to true to test UI
+boolean isDebugging = false; // DEBUG: Set this and cardPresent to true to test UI
+boolean cardPresent_old = false;
+String cardID = ""; // NB skal muligvis laves til char-array for at spare memory
+String cardID_old = "";
 
 // Servo variables
 Servo servoNFC;
@@ -50,7 +51,7 @@ int lastButtonStateEnglish = 0;
 boolean hasReadNFC = false;
 boolean hasPressedButton = false;
 boolean hasDispensedPill = false;
-
+String languageChosen = "";
 
 void setup() {
   Serial.begin(9600);
@@ -61,7 +62,7 @@ void setup() {
 
   Ethernet.begin(mac, myip);
   delay(5000); // wait for ethernetcard
-  aktivateEthernetSPI(false);
+  aktivateEthernetSPI(true);
 
   // Attach servos
   servoNFC.attach(5);
@@ -73,13 +74,15 @@ void setup() {
   pinMode(buttonPinDanish, INPUT);
   pinMode(buttonPinEnglish, INPUT);
 
+  client.connect(pc_server,80);
+
   // Ready to start
   Serial.println("Ready");
 
 }
 
 void loop() {
-
+  
   // PHASE 1 : Check for a token
   if (!hasReadNFC) {
     checkForNFC();
@@ -100,14 +103,36 @@ void loop() {
 
 // CHECKS FOR A PRESENTED NFC TAG (TOKEN)
 void checkForNFC() {
-  do {
-    readId = getID();
-    if (readId.length() > 0) { // An NFC chip has been presented
-      hasReadNFC = true;
-      delay(1000);
-      openServo(posNFC, servoNFC); // Close NFC coin slot
+
+  if(cardPresent) {
+    if ( mfrc522.PICC_ReadCardSerial()) {
+      getID();
     }
-  } while (readId.length() > 0);
+    hasReadNFC = true;
+    delay(1000);
+    openServo(posNFC, servoNFC); // Close NFC coin slot
+  }
+
+  if ( mfrc522.PICC_ReadCardSerial()) {
+    getID();
+  }
+
+  
+  cardPresent_old = cardPresent;
+
+
+  // -----------------ALT HERUNDER SKAL STÅ SIDST I MAIN LOOP!
+
+  if ( ! mfrc522.PICC_IsNewCardPresent() && !isDebugging) {
+    cardPresent = false;
+    return;
+    delay(10);
+  }
+
+  cardPresent = true;
+
+  // mfrc522.PICC_HaltA();
+  delay(10);
 }
 
 // CHECKS IF A BUTTON HAS BEEN PRESSED
@@ -115,6 +140,7 @@ void checkForButtonPress() {
   if ( (buttonStateDanish != lastButtonStateDanish) || (buttonStateEnglish != lastButtonStateEnglish) ) {
     if ( buttonStateDanish == HIGH || buttonStateEnglish == HIGH) {
       hasPressedButton = true;
+      languageChosen = buttonStateDanish == HIGH ? "DK" : "UK";
     }
     delay(50);
   }
@@ -124,13 +150,14 @@ void checkForButtonPress() {
 void dispensePill() {
   // VICTORS CODE TO DISPENSE THE PILL(S) HERE (both opens and closes the servo)
   hasDispensedPill = true;
-  resetSystem();
 }
 
 // PRINT DIAGOSIS
 void printDiagnosis() {
   // CODE TO PRINT THE DIAGNOSIS HERE
-  
+  Serial.println("Printing");
+  submitData();
+
 }
 
 // RESET THE SYSTEM
@@ -138,7 +165,27 @@ void resetSystem() {
   hasReadNFC = false;
   hasPressedButton = false;
   hasDispensedPill = false;
+  languageChosen = "";
   closeServo(posNFC, servoNFC);
+}
+
+void submitData() {
+
+  aktivateEthernetSPI(true);
+
+  String datastring = "GET /machine//readval.php?tag=" + String(cardID) + "&lingo=" + languageChosen + " HTTP/1.0";
+
+  if(client.connect(pc_server,80)) {
+      client.println(datastring);
+      client.println("Connection: close");
+      client.println(); //vigtigt at sende tom linie
+      client.stop();
+      delay(100);
+    }
+  
+
+  aktivateEthernetSPI(false);
+  resetSystem();
 }
 
 void aktivateEthernetSPI(boolean x) {
@@ -167,25 +214,18 @@ void closeServo(int servoPos, Servo servo) {
 }
 
 
-String getID() {
-
-  String id = "";
-
-  // Getting ready for Reading PICCs
-  if ( ! mfrc522.PICC_IsNewCardPresent()) { //If a new PICC placed to RFID reader continue
-    return id;
-  }
-  if ( ! mfrc522.PICC_ReadCardSerial()) {   //Since a PICC placed get Serial and continue
-    return id;
+void getID() {
+  String  cardIDtmp = "";
+  // for (byte i = 0; i < mfrc522.uid.size; i++)
+  for (byte i = 0; i < 3; i++) {
+    byte tmp = (mfrc522.uid.uidByte[i]);
+    cardIDtmp.concat(tmp);
   }
 
-  for (int i = 0; i < 4; i++) {  //
-    readCard[i] = mfrc522.uid.uidByte[i];
-    id += readCard[i];
+  // has ID changed?
+  if (cardIDtmp != cardID_old) {
+    cardID = cardIDtmp;
+    cardID_old = cardID;
   }
-
-  Serial.println(id);
-
-  mfrc522.PICC_HaltA(); // Stop reading
-  return id;
 }
+
