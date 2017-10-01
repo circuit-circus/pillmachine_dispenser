@@ -12,7 +12,7 @@
 #include <Servo.h>
 
 // Ethernet variables
-static uint8_t mac[] = {  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
+static uint8_t mac[] = {  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0x01 };
 static uint8_t myip[] = {  10, 0, 0, 200 };
 IPAddress pc_server(10,0,0,31);  // serverens adress
 
@@ -40,7 +40,7 @@ Servo servoLDR;
 #define servoDispenserPin A3
 
 int posNFC = 0;
-int posDispenser = 0;
+int posDispenser = 130;
 
 // Button variables
 const int buttonPinDanish = A0;
@@ -218,7 +218,14 @@ void updateTimer() {
 
 // DISPENSES A PILL
 void dispensePill() {
-  // VICTORS CODE TO DISPENSE THE PILL(S) HERE (both opens and closes the servo)
+  servoDispenser.write(160);
+  delay(2000);
+  servoDispenser.write(180);
+  delay(500);
+  servoDispenser.write(30);
+  delay(2000);
+  servoDispenser.write(160);
+
   hasDispensedPill = true;
 }
 
@@ -240,6 +247,7 @@ void resetSystem() {
   isNFCTimerExpired = false;
 
   closeServo(posNFC, servoNFC);
+  closeServo(posDispenser, servoDispenser);
 
   digitalWrite(danishLEDPin, LOW);
   digitalWrite(englishLEDPin, LOW);
