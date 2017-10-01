@@ -36,16 +36,39 @@ Servo servoNFC;
 Servo servoDispenser;
 Servo servoLDR;
 
+#define servoNFCPin A2
+#define servoDispenserPin A3
+
 int posNFC = 0;
 int posDispenser = 0;
 
 // Button variables
-int buttonPinDanish = 2;
-int buttonPinEnglish = 3;
+const int buttonPinDanish = A0;
+const int buttonPinEnglish = A1;
+const int danishLEDPin = 3;
+const int englishLEDPin = 2;
 int buttonStateDanish = 0;
 int buttonStateEnglish = 0;
-int lastButtonStateDanish = 0;
-int lastButtonStateEnglish = 0;
+int lastButtonStateDanish = 1;
+int lastButtonStateEnglish = 1;
+
+// Indicator LEDs
+const int pillDropLedPin = 4;
+const int numOneLedPin = LED_BUILTIN;
+const int numTwoLedPin = 6;
+const int numThreeLedPin = 7;
+
+// Timers
+long NFCTimer = 0;
+const long NFCTimerDuration = 5000;
+long panicTimer = 0;
+const long panicTimerDuration = 15000;
+long previousPanicBlink = 0;
+boolean panicBlinkState = 0;
+const int panicBlinkDuration = 500; // How long should one blink last?
+
+boolean isNFCTimerExpired = false;
+boolean isPanicTimerExpired = false;
 
 // System variables
 boolean hasReadNFC = false;
@@ -61,15 +84,23 @@ void setup() {
   mfrc522.PCD_Init(); // Init MFRC522 (RFID reader)
 
   Ethernet.begin(mac, myip);
+
   delay(5000); // wait for ethernetcard
   aktivateEthernetSPI(true);
 
   // Attach servos
-  servoNFC.attach(5);
-  servoDispenser.attach(6);
+  servoNFC.attach(servoNFCPin);
+  servoDispenser.attach(servoDispenserPin);
 
   servoNFC.write(posNFC);
   servoDispenser.write(posDispenser);
+
+  pinMode(danishLEDPin, OUTPUT);
+  pinMode(englishLEDPin, OUTPUT);
+  pinMode(numOneLedPin, OUTPUT);
+  pinMode(numTwoLedPin, OUTPUT);
+  pinMode(numThreeLedPin, OUTPUT);
+  pinMode(pillDropLedPin, OUTPUT);
 
   pinMode(buttonPinDanish, INPUT);
   pinMode(buttonPinEnglish, INPUT);
@@ -91,6 +122,7 @@ void loop() {
   // PHASE 2 : Check for buttonpress (English or Danish)
   if (hasReadNFC && !hasPressedButton) {
     checkForButtonPress();
+    updateTimer();
   }
 
   // PHASE 3 : Try to dispense pill(s)
@@ -111,6 +143,9 @@ void checkForNFC() {
     hasReadNFC = true;
     delay(1000);
     openServo(posNFC, servoNFC); // Close NFC coin slot
+    NFCTimer = millis();
+    digitalWrite(numOneLedPin, LOW);
+    digitalWrite(numTwoLedPin, HIGH);
   }
 
   if ( mfrc522.PICC_ReadCardSerial()) {
@@ -137,12 +172,50 @@ void checkForNFC() {
 
 // CHECKS IF A BUTTON HAS BEEN PRESSED
 void checkForButtonPress() {
+  Serial.println("Waiting for button press");
+  buttonStateDanish = digitalRead(buttonPinDanish);
+  buttonStateEnglish = digitalRead(buttonPinEnglish);
+
   if ( (buttonStateDanish != lastButtonStateDanish) || (buttonStateEnglish != lastButtonStateEnglish) ) {
+    Serial.println("A state was not like it's last state");
     if ( buttonStateDanish == HIGH || buttonStateEnglish == HIGH) {
+      Serial.println("A state was high as fuck");
       hasPressedButton = true;
       languageChosen = buttonStateDanish == HIGH ? "DK" : "UK";
+
+      digitalWrite(numTwoLedPin, LOW);
+      digitalWrite(numThreeLedPin, HIGH);
+
+      digitalWrite(danishLEDPin, buttonStateDanish);
+      digitalWrite(englishLEDPin, buttonStateEnglish);
     }
     delay(50);
+  }
+
+  lastButtonStateDanish = buttonStateDanish;
+  lastButtonStateEnglish = buttonStateEnglish;
+}
+
+// UPDATES TIMERS AND REACTS ON THEM
+void updateTimer() {
+  unsigned long currentMillis = millis();
+  if(currentMillis > NFCTimer + NFCTimerDuration && !isNFCTimerExpired) {
+    panicTimer = currentMillis;
+    isNFCTimerExpired = true;
+  }
+
+  if(isNFCTimerExpired) {
+    if(currentMillis - previousPanicBlink >= panicBlinkDuration) {
+      previousPanicBlink = currentMillis;
+      panicBlinkState = !panicBlinkState;
+      digitalWrite(numTwoLedPin, panicBlinkState);
+    }
+
+    if(currentMillis > panicTimer + panicTimerDuration && !isPanicTimerExpired) {
+      resetSystem();
+      digitalWrite(numTwoLedPin, LOW);
+      isPanicTimerExpired = true;
+    }
   }
 }
 
@@ -155,6 +228,7 @@ void dispensePill() {
 // PRINT DIAGOSIS
 void printDiagnosis() {
   // CODE TO PRINT THE DIAGNOSIS HERE
+  digitalWrite(pillDropLedPin, HIGH);
   Serial.println("Printing");
   submitData();
 
@@ -166,7 +240,19 @@ void resetSystem() {
   hasPressedButton = false;
   hasDispensedPill = false;
   languageChosen = "";
+  isNFCTimerExpired = false;
+  isPanicTimerExpired = false;
+  NFCTimer = 0;
+  panicTimer = 0;
+
   closeServo(posNFC, servoNFC);
+
+  digitalWrite(danishLEDPin, LOW);
+  digitalWrite(englishLEDPin, LOW);
+  digitalWrite(numOneLedPin, HIGH);
+  digitalWrite(numTwoLedPin, LOW);
+  digitalWrite(numThreeLedPin, LOW);
+  digitalWrite(pillDropLedPin, LOW);
 }
 
 void submitData() {
