@@ -54,21 +54,20 @@ int lastButtonStateEnglish = 1;
 
 // Indicator LEDs
 const int pillDropLedPin = 4;
-const int numOneLedPin = LED_BUILTIN;
+const int numOneLedPin = 5;
 const int numTwoLedPin = 6;
 const int numThreeLedPin = 7;
 
 // Timers
-long NFCTimer = 0;
-const long NFCTimerDuration = 5000;
-long panicTimer = 0;
-const long panicTimerDuration = 15000;
-long previousPanicBlink = 0;
+unsigned long NFCTimer = 0;
+const unsigned long NFCTimerDuration = 5000;
+unsigned long panicTimer = 0;
+const unsigned long panicTimerDuration = 15000;
+unsigned long previousPanicBlink = 0;
 boolean panicBlinkState = 0;
 const int panicBlinkDuration = 500; // How long should one blink last?
 
 boolean isNFCTimerExpired = false;
-boolean isPanicTimerExpired = false;
 
 // System variables
 boolean hasReadNFC = false;
@@ -172,14 +171,11 @@ void checkForNFC() {
 
 // CHECKS IF A BUTTON HAS BEEN PRESSED
 void checkForButtonPress() {
-  Serial.println("Waiting for button press");
   buttonStateDanish = digitalRead(buttonPinDanish);
   buttonStateEnglish = digitalRead(buttonPinEnglish);
 
   if ( (buttonStateDanish != lastButtonStateDanish) || (buttonStateEnglish != lastButtonStateEnglish) ) {
-    Serial.println("A state was not like it's last state");
     if ( buttonStateDanish == HIGH || buttonStateEnglish == HIGH) {
-      Serial.println("A state was high as fuck");
       hasPressedButton = true;
       languageChosen = buttonStateDanish == HIGH ? "DK" : "UK";
 
@@ -199,6 +195,7 @@ void checkForButtonPress() {
 // UPDATES TIMERS AND REACTS ON THEM
 void updateTimer() {
   unsigned long currentMillis = millis();
+
   if(currentMillis > NFCTimer + NFCTimerDuration && !isNFCTimerExpired) {
     panicTimer = currentMillis;
     isNFCTimerExpired = true;
@@ -211,10 +208,10 @@ void updateTimer() {
       digitalWrite(numTwoLedPin, panicBlinkState);
     }
 
-    if(currentMillis > panicTimer + panicTimerDuration && !isPanicTimerExpired) {
+    if(currentMillis > panicTimer + panicTimerDuration) {
       resetSystem();
       digitalWrite(numTwoLedPin, LOW);
-      isPanicTimerExpired = true;
+      isNFCTimerExpired = false;
     }
   }
 }
@@ -241,9 +238,6 @@ void resetSystem() {
   hasDispensedPill = false;
   languageChosen = "";
   isNFCTimerExpired = false;
-  isPanicTimerExpired = false;
-  NFCTimer = 0;
-  panicTimer = 0;
 
   closeServo(posNFC, servoNFC);
 
