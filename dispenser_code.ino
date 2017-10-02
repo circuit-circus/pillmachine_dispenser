@@ -177,7 +177,7 @@ void checkForButtonPress() {
   if ( (buttonStateDanish != lastButtonStateDanish) || (buttonStateEnglish != lastButtonStateEnglish) ) {
     if ( buttonStateDanish == HIGH || buttonStateEnglish == HIGH) {
       hasPressedButton = true;
-      languageChosen = buttonStateDanish == HIGH ? "DK" : "UK";
+      languageChosen = buttonStateDanish == HIGH ? "UK" : "DK";
 
       digitalWrite(numTwoLedPin, LOW);
       digitalWrite(numThreeLedPin, HIGH);
