@@ -34,13 +34,12 @@ String cardID_old = "";
 // Servo variables
 Servo servoNFC;
 Servo servoDispenser;
-Servo servoLDR;
 
 #define servoNFCPin A2
-#define servoDispenserPin A3
+#define servoDispenserPin A4
 
 int posNFC = 0;
-int posDispenser = 130;
+int posDispenser = 160;
 
 // Button variables
 const int buttonPinDanish = A0;
@@ -77,7 +76,6 @@ String languageChosen = "";
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial);
 
   SPI.begin();
   mfrc522.PCD_Init(); // Init MFRC522 (RFID reader)
@@ -85,7 +83,7 @@ void setup() {
   Ethernet.begin(mac, myip);
 
   delay(5000); // wait for ethernetcard
-  aktivateEthernetSPI(true);
+  aktivateEthernetSPI(false);
 
   // Attach servos
   servoNFC.attach(servoNFCPin);
@@ -103,8 +101,6 @@ void setup() {
 
   pinMode(buttonPinDanish, INPUT);
   pinMode(buttonPinEnglish, INPUT);
-
-  client.connect(pc_server,80);
 
   // Ready to start
   Serial.println("Ready");
@@ -223,6 +219,9 @@ void dispensePill() {
   servoDispenser.write(180);
   delay(500);
   servoDispenser.write(30);
+  
+  digitalWrite(pillDropLedPin, HIGH);
+
   delay(2000);
   servoDispenser.write(160);
 
@@ -232,7 +231,6 @@ void dispensePill() {
 // PRINT DIAGOSIS
 void printDiagnosis() {
   // CODE TO PRINT THE DIAGNOSIS HERE
-  digitalWrite(pillDropLedPin, HIGH);
   Serial.println("Printing");
   submitData();
 
