@@ -39,6 +39,7 @@ Servo servoDispenser;
 #define servoDispenserPin A4
 
 int posNFC = 0;
+int posNFCClosed = 90;
 int posDispenser = 160;
 
 // Button variables
@@ -108,7 +109,6 @@ void setup() {
 }
 
 void loop() {
-  
   // PHASE 1 : Check for a token
   if (!hasReadNFC) {
     checkForNFC();
@@ -138,7 +138,7 @@ void checkForNFC() {
     hasReadNFC = true;
     delay(500);
 
-    openServo(posNFC, servoNFC); // Close NFC coin slot
+    openNFCServo(); // Close NFC coin slot
     NFCTimer = millis();
     digitalWrite(numOneLedPin, LOW);
     digitalWrite(numTwoLedPin, HIGH);
@@ -148,7 +148,7 @@ void checkForNFC() {
     getID();
   }
 
-  
+
   cardPresent_old = cardPresent;
 
 
@@ -245,7 +245,7 @@ void resetSystem() {
   languageChosen = "";
   isNFCTimerExpired = false;
 
-  closeServo(posNFC, servoNFC);
+  closeNFCServo();
 
   digitalWrite(danishLEDPin, LOW);
   digitalWrite(englishLEDPin, LOW);
@@ -283,17 +283,17 @@ void aktivateEthernetSPI(boolean x) {
   digitalWrite(10,!x);
 }
 
-void openServo(int servoPos, Servo servo) {
-  for (servoPos = 0; servoPos <= 180; servoPos += 1) {
-    servo.write(servoPos);
+void openNFCServo() {
+  for (posNFC = 0; posNFC <= posNFCClosed; posNFC += 1) {
+    servoNFC.write(posNFC);
     delay(10);
   }
   return;
 }
 
-void closeServo(int servoPos, Servo servo) {
-  for (servoPos = 180; servoPos >= 0; servoPos -= 1) {
-    servo.write(servoPos);
+void closeNFCServo() {
+  for (posNFC = posNFCClosed; posNFC >= 0; posNFC -= 1) {
+    servoNFC.write(posNFC);
     delay(10);
   }
   return;
