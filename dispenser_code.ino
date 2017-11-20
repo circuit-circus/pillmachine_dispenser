@@ -126,6 +126,14 @@ void loop() {
     printDiagnosis();
   }
 
+  /*if(shouldMoveServo) {
+    if((millis() - lastServoUpdate) > updateInterval) {
+      lastServoUpdate = millis();
+
+      if()
+    }
+  }*/
+
 }
 
 // CHECKS FOR A PRESENTED NFC TAG (TOKEN)
@@ -136,7 +144,8 @@ void checkForNFC() {
       getID();
     }
     hasReadNFC = true;
-    delay(1000);
+    delay(500);
+
     openServo(posNFC, servoNFC); // Close NFC coin slot
     NFCTimer = millis();
     digitalWrite(numOneLedPin, LOW);
@@ -245,7 +254,7 @@ void resetSystem() {
   isNFCTimerExpired = false;
 
   closeServo(posNFC, servoNFC);
-  closeServo(posDispenser, servoDispenser);
+  // closeServo(posDispenser, servoDispenser);
 
   digitalWrite(danishLEDPin, LOW);
   digitalWrite(englishLEDPin, LOW);
@@ -286,15 +295,15 @@ void aktivateEthernetSPI(boolean x) {
 void openServo(int servoPos, Servo servo) {
   for (servoPos = 0; servoPos <= 180; servoPos += 1) {
     servo.write(servoPos);
-    delay(15);
+    delay(10);
   }
   return;
 }
 
 void closeServo(int servoPos, Servo servo) {
-  for (int pos = 180; pos >= 0; pos -= 1) {
+  for (servoPos = 180; servoPos >= 0; servoPos -= 1) {
     servo.write(servoPos);
-    delay(15);
+    delay(10);
   }
   return;
 }
