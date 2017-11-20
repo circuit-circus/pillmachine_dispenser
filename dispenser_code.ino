@@ -126,14 +126,6 @@ void loop() {
     printDiagnosis();
   }
 
-  /*if(shouldMoveServo) {
-    if((millis() - lastServoUpdate) > updateInterval) {
-      lastServoUpdate = millis();
-
-      if()
-    }
-  }*/
-
 }
 
 // CHECKS FOR A PRESENTED NFC TAG (TOKEN)
@@ -254,7 +246,6 @@ void resetSystem() {
   isNFCTimerExpired = false;
 
   closeServo(posNFC, servoNFC);
-  // closeServo(posDispenser, servoDispenser);
 
   digitalWrite(danishLEDPin, LOW);
   digitalWrite(englishLEDPin, LOW);
