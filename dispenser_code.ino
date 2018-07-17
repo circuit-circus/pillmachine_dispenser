@@ -299,6 +299,10 @@ void closeNFCServo() {
   return;
 }
 
+// Source: https://forum.arduino.cc/index.php?topic=49581.0
+void softReset() {
+  asm volatile ("  jmp 0");
+}
 
 void getID() {
   String  cardIDtmp = "";
