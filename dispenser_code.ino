@@ -253,6 +253,8 @@ void resetSystem() {
   digitalWrite(numTwoLedPin, LOW);
   digitalWrite(numThreeLedPin, LOW);
   digitalWrite(pillDropLedPin, LOW);
+
+  softReset();
 }
 
 void submitData() {
