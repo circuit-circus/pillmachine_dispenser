@@ -18,7 +18,6 @@ IPAddress pc_server(10,0,0,31);  // serverens adress
 
 EthernetClient client;
 
-
 // RFID variables
 #define RST_PIN 9
 #define SS_PIN 8
@@ -83,7 +82,11 @@ void setup() {
 
   Ethernet.begin(mac, myip);
 
-  delay(5000); // wait for ethernetcard
+  pinMode(numOneLedPin, OUTPUT);
+  pinMode(numTwoLedPin, OUTPUT);
+  pinMode(numThreeLedPin, OUTPUT);
+
+  showWaitingBlinks(); // wait for ethernet card while showing blinks
   aktivateEthernetSPI(false);
 
   // Attach servos
@@ -95,13 +98,12 @@ void setup() {
 
   pinMode(danishLEDPin, OUTPUT);
   pinMode(englishLEDPin, OUTPUT);
-  pinMode(numOneLedPin, OUTPUT);
-  pinMode(numTwoLedPin, OUTPUT);
-  pinMode(numThreeLedPin, OUTPUT);
   pinMode(pillDropLedPin, OUTPUT);
 
   pinMode(buttonPinDanish, INPUT);
   pinMode(buttonPinEnglish, INPUT);
+
+  digitalWrite(numOneLedPin, HIGH);
 
   // Ready to start
   Serial.println("Ready");
@@ -245,16 +247,37 @@ void resetSystem() {
   languageChosen = "";
   isNFCTimerExpired = false;
 
-  closeNFCServo();
-
   digitalWrite(danishLEDPin, LOW);
   digitalWrite(englishLEDPin, LOW);
-  digitalWrite(numOneLedPin, HIGH);
+  digitalWrite(numOneLedPin, LOW);
   digitalWrite(numTwoLedPin, LOW);
   digitalWrite(numThreeLedPin, LOW);
   digitalWrite(pillDropLedPin, LOW);
 
   softReset();
+}
+
+void showWaitingBlinks() {
+  delay(1000);
+  digitalWrite(numOneLedPin, HIGH);
+  digitalWrite(numTwoLedPin, HIGH);
+  digitalWrite(numThreeLedPin, HIGH);
+  delay(1000);
+  digitalWrite(numOneLedPin, LOW);
+  digitalWrite(numTwoLedPin, LOW);
+  digitalWrite(numThreeLedPin, LOW);
+  delay(1000);
+  digitalWrite(numOneLedPin, HIGH);
+  digitalWrite(numTwoLedPin, HIGH);
+  digitalWrite(numThreeLedPin, HIGH);
+  delay(1000);
+  digitalWrite(numOneLedPin, LOW);
+  digitalWrite(numTwoLedPin, LOW);
+  digitalWrite(numThreeLedPin, LOW);
+  delay(1000);
+  digitalWrite(numOneLedPin, HIGH);
+  digitalWrite(numTwoLedPin, LOW);
+  digitalWrite(numThreeLedPin, LOW);
 }
 
 void submitData() {
