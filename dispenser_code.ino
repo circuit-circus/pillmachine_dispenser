@@ -37,8 +37,8 @@ Servo servoDispenser;
 #define servoNFCPin A2
 #define servoDispenserPin A4
 
-int posNFC = 0;
-int posNFCClosed = 90;
+int posNFC = 10;
+int posNFCClosed = 100;
 int posDispenser = 160;
 
 // Button variables
