@@ -37,8 +37,9 @@ Servo servoDispenser;
 #define servoNFCPin A2
 #define servoDispenserPin A4
 
-int posNFC = 10;
-int posNFCClosed = 100;
+const int posNFCBase = 40;
+int posNFC = posNFCBase;
+int posNFCClosed = 130;
 int posDispenser = 160;
 
 // Button variables
@@ -309,7 +310,7 @@ void aktivateEthernetSPI(boolean x) {
 }
 
 void openNFCServo() {
-  for (posNFC = 0; posNFC <= posNFCClosed; posNFC += 1) {
+  for (posNFC = posNFCBase; posNFC <= posNFCClosed; posNFC += 1) {
     servoNFC.write(posNFC);
     delay(10);
   }
@@ -317,7 +318,7 @@ void openNFCServo() {
 }
 
 void closeNFCServo() {
-  for (posNFC = posNFCClosed; posNFC >= 0; posNFC -= 1) {
+  for (posNFC = posNFCClosed; posNFC >= posNFCBase; posNFC -= 1) {
     servoNFC.write(posNFC);
     delay(10);
   }
