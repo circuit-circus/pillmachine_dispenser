@@ -37,10 +37,12 @@ Servo servoDispenser;
 #define servoNFCPin A2
 #define servoDispenserPin A4
 
-const int posNFCBase = 10;
+const int posNFCBase = 25;
 int posNFC = posNFCBase;
-int posNFCClosed = 100;
-int posDispenser = 160;
+int posNFCClosed = 115;
+const int posDispenserStart = 160;
+const int posDispenserMid = 180;
+const int posDispenserEnd = 30;
 
 // Button variables
 const int buttonPinDanish = A0;
@@ -95,7 +97,7 @@ void setup() {
   servoDispenser.attach(servoDispenserPin);
 
   servoNFC.write(posNFC);
-  servoDispenser.write(posDispenser);
+  servoDispenser.write(posDispenserStart);
 
   pinMode(danishLEDPin, OUTPUT);
   pinMode(englishLEDPin, OUTPUT);
@@ -218,16 +220,16 @@ void updateTimer() {
 
 // DISPENSES A PILL
 void dispensePill() {
-  servoDispenser.write(160);
+  servoDispenser.write(posDispenserStart);
   delay(2000);
-  servoDispenser.write(180);
+  servoDispenser.write(posDispenserMid);
   delay(500);
-  servoDispenser.write(30);
+  servoDispenser.write(posDispenserEnd);
   
   digitalWrite(pillDropLedPin, HIGH);
 
   delay(2000);
-  servoDispenser.write(160);
+  servoDispenser.write(posDispenserStart);
 
   hasDispensedPill = true;
 }
