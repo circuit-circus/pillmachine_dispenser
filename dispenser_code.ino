@@ -89,12 +89,12 @@ void setup() {
   pinMode(numTwoLedPin, OUTPUT);
   pinMode(numThreeLedPin, OUTPUT);
 
-  showWaitingBlinks(); // wait for ethernet card while showing blinks
-  aktivateEthernetSPI(false);
-
   // Attach servos
   servoNFC.attach(servoNFCPin);
   servoDispenser.attach(servoDispenserPin);
+
+  showWaitingBlinks(); // wait for ethernet card while showing blinks
+  aktivateEthernetSPI(false);
 
   servoNFC.write(posNFC);
   servoDispenser.write(posDispenserStart);
@@ -270,6 +270,7 @@ void showWaitingBlinks() {
   digitalWrite(numTwoLedPin, LOW);
   digitalWrite(numThreeLedPin, LOW);
   delay(1000);
+  servoNFC.write(posNFCClosed);
   digitalWrite(numOneLedPin, HIGH);
   digitalWrite(numTwoLedPin, HIGH);
   digitalWrite(numThreeLedPin, HIGH);
