@@ -40,7 +40,7 @@ Servo servoDispenser;
 const int posNFCBase = 25;
 int posNFC = posNFCBase;
 int posNFCClosed = 115;
-const int posDispenserStart = 160;
+const int posDispenserStart = 150;
 const int posDispenserMid = 180;
 const int posDispenserEnd = 30;
 
@@ -271,6 +271,7 @@ void showWaitingBlinks() {
   digitalWrite(numThreeLedPin, LOW);
   delay(1000);
   servoNFC.write(posNFCClosed);
+  delay(500);
   digitalWrite(numOneLedPin, HIGH);
   digitalWrite(numTwoLedPin, HIGH);
   digitalWrite(numThreeLedPin, HIGH);
